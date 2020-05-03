@@ -1,0 +1,106 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: >-
+  Creates an app that builds an RSS feed from objects in an S3 bucket. The
+  bucket is used as the origin for a CloudFront distribution that the objects
+  are served from.
+Parameters:
+  FeedName:
+    Type: String
+Resources:
+  Bucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+  BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref Bucket
+      PolicyDocument:
+        Statement:
+          - Action:
+              - s3:GetObject
+            Effect: Allow
+            Resource: !Sub ${Bucket.Arn}/*
+            Principal:
+              CanonicalUser: !GetAtt CloudFrontOriginAccessIdentity.S3CanonicalUserId
+  HttpApi:
+    Type: AWS::Serverless::HttpApi
+  IamRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+            - Action:
+                - sts:AssumeRole
+              Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: S3List
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:List*
+                Resource:
+                  - !GetAtt Bucket.Arn
+  Function:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: index.js
+      Description: !Sub Generates an RSS feed for ${FeedName}
+      Environment:
+        Variables:
+          BUCKET_NAME: !Ref Bucket
+          CDN_DOMAIN_NAME: !GetAtt CloudFrontDistribution.DomainName
+          FEED_NAME: !Ref FeedName
+      Events:
+        ApiRequest:
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: get
+            Path: /
+          Type: HttpApi
+      Handler: index.handler
+      MemorySize: 512
+      Role: !GetAtt IamRole.Arn
+      Runtime: nodejs12.x
+      Timeout: 8
+  CloudFrontOriginAccessIdentity:
+    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: !Sub Origin access ID for ${Bucket}
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        DefaultCacheBehavior:
+          AllowedMethods: [HEAD, GET, OPTIONS]
+          CachedMethods: [HEAD, GET, OPTIONS]
+          Compress: true
+          DefaultTTL: 86400
+          ForwardedValues:
+            QueryString: false
+          TargetOriginId: default-origin
+          ViewerProtocolPolicy : https-only
+        Enabled: true
+        HttpVersion: http2
+        IPV6Enabled: true
+        Origins:
+          - DomainName: !GetAtt Bucket.RegionalDomainName
+            Id: default-origin
+            S3OriginConfig:
+              OriginAccessIdentity: !Sub origin-access-identity/cloudfront/${CloudFrontOriginAccessIdentity}
+        PriceClass: PriceClass_100
+Outputs:
+  FeedUrl:
+    Value: !Sub https://${HttpApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}
+  CdnDomain:
+    Value: !GetAtt CloudFrontDistribution.DomainName
