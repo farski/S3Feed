@@ -21,9 +21,9 @@ Resources:
           - Action:
               - s3:GetObject
             Effect: Allow
-            Resource: !Sub ${Bucket.Arn}/*
             Principal:
               CanonicalUser: !GetAtt CloudFrontOriginAccessIdentity.S3CanonicalUserId
+            Resource: !Sub ${Bucket.Arn}/*
   HttpApi:
     Type: AWS::Serverless::HttpApi
   IamRole:
@@ -41,15 +41,15 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
       Policies:
-        - PolicyName: S3List
-          PolicyDocument:
+        - PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              - Effect: Allow
-                Action:
+              - Action:
                   - s3:List*
+                Effect: Allow
                 Resource:
                   - !GetAtt Bucket.Arn
+          PolicyName: S3List
   Function:
     Type: AWS::Serverless::Function
     Properties:
