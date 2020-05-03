@@ -32,18 +32,12 @@ function itemString(object) {
 }
 
 exports.handler = async (event) => {
-  const objects = await s3.listObjectsV2({
-    Bucket: process.env.BUCKET_NAME,
-  }).promise()
-
-  const x = rssString(objects.Contents.map(o => itemString(o)));
-  console.log(x);
+  const list = await s3.listObjectsV2({ Bucket: process.env.BUCKET_NAME }).promise();
+  const body = rssString(list.Contents.map(itemString));
 
   return {
     statusCode: 200,
-    headers: {
-      'Content-Type': 'application/rss+xml; charset=UTF-8',
-    },
-    body: x,
-  }
+    headers: { 'Content-Type': 'application/rss+xml; charset=UTF-8' },
+    body,
+  };
 }
