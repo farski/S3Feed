@@ -31,7 +31,7 @@ function itemString(object) {
   ].join('\n');
 }
 
-exports.handler = async (event) => {
+exports.handler = async () => {
   const list = await s3.listObjectsV2({ Bucket: process.env.BUCKET_NAME }).promise();
   const body = rssString(list.Contents.map(itemString));
 
