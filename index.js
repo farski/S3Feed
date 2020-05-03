@@ -40,4 +40,4 @@ exports.handler = async () => {
     headers: { 'Content-Type': 'application/rss+xml; charset=UTF-8' },
     body,
   };
-}
+};
