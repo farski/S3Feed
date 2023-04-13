@@ -70,7 +70,7 @@ Resources:
       Handler: index.handler
       MemorySize: 512
       Role: !GetAtt IamRole.Arn
-      Runtime: nodejs12.x
+      Runtime: nodejs18.x
       Timeout: 8
   CloudFrontOriginAccessIdentity:
     Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
