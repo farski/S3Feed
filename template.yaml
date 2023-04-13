@@ -18,8 +18,7 @@ Resources:
       Bucket: !Ref Bucket
       PolicyDocument:
         Statement:
-          - Action:
-              - s3:GetObject
+          - Action: s3:GetObject
             Effect: Allow
             Principal:
               CanonicalUser: !GetAtt CloudFrontOriginAccessIdentity.S3CanonicalUserId
@@ -31,12 +30,10 @@ Resources:
     Properties:
       AssumeRolePolicyDocument:
         Statement:
-            - Action:
-                - sts:AssumeRole
+            - Action: sts:AssumeRole
               Effect: Allow
               Principal:
-                Service:
-                  - lambda.amazonaws.com
+                Service: lambda.amazonaws.com
         Version: "2012-10-17"
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
@@ -44,11 +41,9 @@ Resources:
         - PolicyDocument:
             Version: "2012-10-17"
             Statement:
-              - Action:
-                  - s3:List*
+              - Action: s3:List*
                 Effect: Allow
-                Resource:
-                  - !GetAtt Bucket.Arn
+                Resource: !GetAtt Bucket.Arn
           PolicyName: S3List
   Function:
     Type: AWS::Serverless::Function
