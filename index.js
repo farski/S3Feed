@@ -1,6 +1,6 @@
-const AWS = require('aws-sdk');
+const { S3 } = require('@aws-sdk/client-s3');
 
-const s3 = new AWS.S3({ apiVersion: '2006-03-01' });
+const s3 = new S3({ apiVersion: '2006-03-01' });
 
 function rssString(itemStrings) {
   return [
@@ -32,7 +32,7 @@ function itemString(object) {
 }
 
 exports.handler = async () => {
-  const list = await s3.listObjectsV2({ Bucket: process.env.BUCKET_NAME }).promise();
+  const list = await s3.listObjectsV2({ Bucket: process.env.BUCKET_NAME });
   const body = rssString(list.Contents.map(itemString));
 
   return {
